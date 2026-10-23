@@ -1,10 +1,17 @@
 """Configuration management for Arxiv Curator."""
 
+from __future__ import annotations
+
 import os
+from contextlib import suppress
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
 
 
 class ProjectConfig(BaseModel):
@@ -26,7 +33,7 @@ class ProjectConfig(BaseModel):
     model_config = {"populate_by_name": True}
 
     @classmethod
-    def from_yaml(cls, config_path: str, env: str = "dev") -> "ProjectConfig":
+    def from_yaml(cls, config_path: str, env: str = "dev") -> ProjectConfig:
         """Load configuration from YAML file.
 
         Args:
@@ -89,11 +96,23 @@ def load_config(config_path: str = "project_config.yml", env: str = "dev") -> Pr
     return ProjectConfig.from_yaml(config_path, env)
 
 
-def get_env() -> str:
-    """Get current environment from environment variable.
+def get_env(spark: SparkSession | None = None) -> str:
+    """Get current environment.
+
+    Reads the ``env`` notebook widget first (a bundle job sets it through ``base_parameters``),
+    then the ``ENV`` environment variable, and falls back to ``dev``.
+
+    Args:
+        spark: Spark session, used to reach the notebook widgets on Databricks
 
     Returns:
         Environment name (dev, acc, or prd)
 
     """
+    if spark is not None:
+        # No widget outside a parameterised Databricks run: fall through to ENV.
+        with suppress(Exception):
+            from pyspark.dbutils import DBUtils
+
+            return DBUtils(spark).widgets.get("env")
     return os.getenv("ENV", "dev")

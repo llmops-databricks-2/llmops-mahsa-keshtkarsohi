@@ -125,8 +125,11 @@ is already in `project_config.yml`.
 ### Repository structure
 
 - `src/arxiv_curator/`: the Python package; `config.py` loads `project_config.yml`.
-- `lecture_1/`, `lecture_2/`, and so on: notebooks copied from the course code.
-- `databricks.yml` and `resources/`: the bundle with the `dev`, `acc`, and `prd` targets.
+- `src/arxiv_curator/ingestion.py`: collects articles from the sources in the data contract's columns.
+- `notebooks/`: `collect.py`, which the daily job runs to add the day's articles to `ai_articles`,
+  and the lecture notebooks copied from the course code (`1.1_...`, `1.3_...`, and so on).
+- `databricks.yml` and `resources/`: the bundle with the `dev`, `acc`, and `prd` targets;
+  `collect.job.yml` is the daily collection job.
 - `pyproject.toml` and `version.txt`: the package and its version.
 - `tests/`: tests; `test_config.py` checks that `project_config.yml` loads.
 - `.github/workflows/ci.yml`: runs the pre-commit hooks and tests on pull requests and pushes to `main`.
