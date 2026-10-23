@@ -55,6 +55,12 @@ htmlcov/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+# Local .ipynb copies of the lecture notebooks; the .py versions are committed
+*.ipynb
+
+# Local-only course material and scratch scripts
+*lecture*-materials.pdf
+test_connect.py
 
 # MLflow
 mlruns/
