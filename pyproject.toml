@@ -20,10 +20,12 @@ dependencies = [
     "mlflow==3.16.1",
     "nest-asyncio==1.6.0",
     "arxiv==2.3.1",
+    "requests==2.32.3",
+    "beautifulsoup4==4.12.3",
     "databricks-agents==1.12.0",
     "psycopg==3.3.2",
     "psycopg-pool==3.3.0",
-    "psycopg[binary]==3.3.2"
+    "psycopg[binary]==3.3.2",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +53,9 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+# Lecture notebooks (1.1_..., 1.3_...) are kept exactly as the course wrote them.
+extend-exclude = ["notebooks/[0-9]*.py"]
+force-exclude = true # also skip them when pre-commit passes them by name
 lint.select = [
     "F",    # pyflakes rules
     "E",    # pycodestyle error rules
@@ -79,7 +84,8 @@ docstring-code-format = true
 [dependency-groups]
 dev = [
     "databricks-connect~=18.0.0",
+    "ipykernel>=7.4.0",
 ]
 
 [tool.databricks.environment]
-environment_version = "6"
+environment_version = "5"

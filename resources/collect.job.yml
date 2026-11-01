@@ -1,0 +1,31 @@
+# The daily collection job: one serverless notebook task that installs your arxiv_curator wheel and
+# adds the day's AI articles to ai_articles in your schema of the target's catalog
+# (dev: llmops_dev.mahsa_keshtkarsohi.ai_articles).
+# It runs every morning at 06:00 Amsterdam time. Development mode pauses the schedule in dev, and
+# schedule_pause_status keeps it paused in acc; prd runs it (databricks.yml).
+resources:
+  jobs:
+    collect:
+      name: job-collect-mahsa-keshtkarsohi-${bundle.target}
+      budget_policy_id: ${var.usage_policy_id}
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"
+        timezone_id: Europe/Amsterdam
+        pause_status: ${var.schedule_pause_status}
+      timeout_seconds: 3600
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "5"
+            dependencies:
+              - ../dist/*.whl
+
+      tasks:
+        - task_key: collect
+          environment_key: default
+          max_retries: 1
+          min_retry_interval_millis: 300000 # 5 minutes, so a briefly failing site can recover
+          notebook_task:
+            notebook_path: ../notebooks/collect.py
+            base_parameters:
+              env: ${bundle.target}

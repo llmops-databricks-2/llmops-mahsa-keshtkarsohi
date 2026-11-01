@@ -1,95 +1,143 @@
-# llmops-mahsa-keshtkarsohi
+# AI Daily Digest
 
-Your repository for the LLMOps course on Databricks. Everything you need in
-the course workspace was provisioned for you before you got this repo, and every id is already in
-`project_config.yml`: you configure nothing.
+An LLMOps project on Databricks: an AI agent that searches the public web every day for articles
+about AI, writes a short summary, and sends it to me as a PDF report with a notification.
 
-## Join the course Discord
+Keeping up with AI is hard: model releases, research, and product announcements appear every day
+across many websites. This agent gathers that information automatically, so I get one readable
+report each morning instead of checking dozens of sites.
 
-Join the course's Discord server with this invite link:
-[https://discord.gg/V4XRYcBFDE](https://discord.gg/V4XRYcBFDE). Join under the
-Discord username you wrote in the intake form: the course channels open automatically for members
-on the student list.
+## What it does
 
-## What was provisioned for you
+1. **Search**: every morning, a scheduled Databricks job collects new AI articles from the public
+   web, including all relevant articles from OpenAI and Anthropic.
+2. **Filter**: duplicates and articles that are not about AI are removed.
+3. **Summarize**: an LLM agent reads the day's articles, groups them by topic, and writes a
+   digest with links to the original articles.
+4. **Report**: the digest is turned into a PDF file, such as `ai_digest_2026-10-23.pdf`.
+5. **Notify**: I receive a notification with the report every day.
+6. **Evaluate and monitor**: the agent is traced and evaluated with MLflow for summary quality,
+   faithfulness to the sources, and cost.
+
+## Output
+
+The output is not a table: it is a **daily PDF report**, delivered to me with a notification.
+
+Each report contains:
+
+- the date and the number of articles found
+- a short overview of the most important AI news of the day
+- sections per topic, such as model releases, research, tools, and business news
+- for every article, a two- or three-sentence summary and a link to the original
+
+Past reports are kept in a Unity Catalog volume, so I can look back at earlier days.
+
+## Data sources
+
+All sources are public web content. The focus is on articles from the major AI labs, completed
+with research papers and AI news from the wider web.
+
+| Source | What it provides |
+|---|---|
+| OpenAI (news, research, and engineering articles) | Model releases, research results, product and safety updates |
+| Anthropic (news, research, and engineering articles) | Model releases, research results, product and safety updates |
+| Other AI lab and company blogs, such as Google DeepMind, Meta AI, Hugging Face, and Databricks | Releases, technical posts, open-source tools |
+| arXiv (cs.AI, cs.LG, cs.CL) | New research papers: titles, abstracts, authors |
+| Public AI news on the web, such as Hacker News and tech news sites | AI stories and discussions from the wider community |
+
+Only publicly available articles are collected, using official feeds and APIs where they exist.
+The report contains short summaries and links, and always points to the original article.
+
+## Data contract
+
+Behind the report, every collected article is stored with the same columns, so the summary step
+does not depend on the source and the agent never reports the same article twice.
+
+| Column | Description |
+|---|---|
+| `source` | Where the article comes from, such as `openai`, `anthropic`, `arxiv`, or `hackernews` |
+| `item_id` | Unique id of the article, such as a hash of its URL |
+| `title` | Title of the article |
+| `url` | Link to the original article |
+| `published` | Publication time |
+| `text` | Article text, abstract, or description |
+| `authors` | Authors, when available |
+| `ingested_at` | When the article was collected |
+
+## Architecture
+
+```
+Public web (OpenAI, Anthropic, other AI sources)
+        │
+        ▼
+Daily search and collection job ──► Articles in Unity Catalog (no duplicates)
+                                                │
+                                                ▼
+                                Summary agent (course_ops.gateway.chat)
+                                                │
+                                                ▼
+                       PDF report in a Unity Catalog volume ──► Notification to me
+                                                │
+                                                ▼
+                                   MLflow traces and evaluation
+```
+
+| Component | Databricks feature |
+|---|---|
+| Daily scheduling | Serverless jobs, deployed with Declarative Automation Bundles |
+| Article storage | Unity Catalog, Delta table in `llmops_dev.mahsa_keshtkarsohi` |
+| LLM calls | AI Gateway model services (`course_ops.gateway.chat`, `course_ops.gateway.embed`) |
+| PDF reports | Unity Catalog volume |
+| Notification | Daily email or message with the report |
+| Search over past articles | Embeddings stored in Lakebase with pgvector |
+| Tracing and evaluation | MLflow experiments per environment |
+| Environments | `dev`, `acc`, and `prd` bundle targets |
+
+## Roadmap
+
+- [x] Project setup: environment, CLI authentication, Databricks Connect
+- [ ] Daily collection of AI articles from OpenAI, Anthropic, and other public sources
+- [ ] Summary agent that writes the daily digest
+- [ ] PDF report generation
+- [ ] Daily notification with the report
+- [ ] Embeddings and search over past articles (ask questions such as "what did Anthropic release this month?")
+- [ ] Evaluation of summary quality with MLflow
+- [ ] Deployment to acceptance and production with CI/CD
+
+---
+
+## Course setup
+
+Everything in the course workspace was provisioned before this repo was created, and every id
+is already in `project_config.yml`.
 
 | What | Value |
 |---|---|
-| Your schema in development, which you manage | `llmops_dev.mahsa_keshtkarsohi` |
-| Your schema in acceptance, which you read | `llmops_acc.mahsa_keshtkarsohi` |
-| Your schema in production, which you read | `llmops_prd.mahsa_keshtkarsohi` |
-| Suggested volume name (create during the course) | `arxiv_files`, such as `llmops_dev.mahsa_keshtkarsohi.arxiv_files` |
+| Schema in development, which I manage | `llmops_dev.mahsa_keshtkarsohi` |
+| Schema in acceptance, read-only | `llmops_acc.mahsa_keshtkarsohi` |
+| Schema in production, read-only | `llmops_prd.mahsa_keshtkarsohi` |
 | SQL warehouse id | `be8f0e8cc38ba3f4` |
 | Usage policy id | `20b687b6-7c89-3e81-9ce3-8177e00936fa` |
 | MLflow experiments | Dev: `/llmops/mahsa_keshtkarsohi-dev`; acc: `/llmops/mahsa_keshtkarsohi-acc`; prd: `/llmops/mahsa_keshtkarsohi-prd` |
-| Chat model service | `course_ops.gateway.chat` |
-| Embedding model service | `course_ops.gateway.embed` |
+| Chat model service | `course_ops.gateway.chat` (GPT-OSS-120B) |
+| Embedding model service | `course_ops.gateway.embed` (GTE Large) |
 
-Both settings name model services of the course’s AI Gateway, with a monthly budget per student.
-Chat routes to GPT-OSS-120B; embeddings route to GTE Large. Call both through the gateway
-with the `databricks-openai` package:
+### Repository structure
 
-```python
-from databricks_openai import DatabricksOpenAI
+- `src/arxiv_curator/`: the Python package; `config.py` loads `project_config.yml`.
+- `src/arxiv_curator/ingestion.py`: collects articles from the sources in the data contract's columns.
+- `notebooks/`: `collect.py`, which the daily job runs to add the day's articles to `ai_articles`,
+  and the lecture notebooks copied from the course code (`1.1_...`, `1.3_...`, and so on).
+- `databricks.yml` and `resources/`: the bundle with the `dev`, `acc`, and `prd` targets;
+  `collect.job.yml` is the daily collection job.
+- `pyproject.toml` and `version.txt`: the package and its version.
+- `tests/`: tests; `test_config.py` checks that `project_config.yml` loads.
+- `.github/workflows/ci.yml`: runs the pre-commit hooks and tests on pull requests and pushes to `main`.
 
-client = DatabricksOpenAI(use_ai_gateway=True)
-client.chat.completions.create(
-    model="course_ops.gateway.chat",
-    messages=[...],
-    reasoning_effort="low",
-    max_tokens=1024,
-)
-client.embeddings.create(model="course_ops.gateway.embed", input="A paper abstract")
-```
-
-The `databricks-openai` package is not included in this repo’s dependencies. The same APIs
-are available through the installed `openai` client with the workspace base URL
-`/ai-gateway/mlflow/v1` and Databricks authentication.
-
-`embedding_endpoint` is a gateway model service despite the existing field name. Generate
-vectors through its embeddings API before storing them in pgvector. It is not a managed
-Vector Search index’s `embedding_model_endpoint_name`.
-
-## Lakebase
-
-The `lakebase_instance` value in `project_config.yml` identifies your Lakebase project.
-All three environments share it; your Unity Catalog schemas remain separate.
-Onboarding does not create an application database or install pgvector. Create the database
-and extensions you need during the course. A Vector Search endpoint is not provisioned.
-
-For a dedicated student project, you and your three deployment service principals have project
-management access and OAuth Postgres roles with database administration privileges. The project
-carries your usage policy and student cost tag. Its initial compute range is 0.5–2 CU, with
-suspension after five idle minutes. Creating extra branches or computes can increase its cost.
-
-## What is in the repo
-
-- `src/arxiv_curator/`: starts with `config.py`, which loads `project_config.yml`.
-  Add the other course modules as you work through the lectures.
-- `lecture_1/`, `lecture_2/` and so on, when you add them: copy a lecture's folder from the course
-  code as it is, to the root of this repo, where its notebooks find `project_config.yml` one level up.
-  Commit it with the hooks installed (below): the first commit stops once, after the hooks have
-  formatted the notebooks and fixed what ruff can, and goes through when you add their changes and
-  commit again. Ruff rules are configured in `pyproject.toml`.
-- `databricks.yml` and `resources/`: the bundle, with three targets, `dev` (your sandbox, in
-  development mode, the default), `acc` and `prd`. It builds the package as a wheel with `uv build`
-  and deploys the `hello` job, named after its target (`job-hello-mahsa-keshtkarsohi-dev`,
-  `-acc`, `-prd`), one serverless notebook task that installs the wheel and writes one row to the
-  `hello` table of your schema in the target's catalog, such as
-  `llmops_dev.mahsa_keshtkarsohi.hello`. The course's onboarding
-  does not deploy these jobs yet. Deployment workflows are introduced in a later lecture.
-- `pyproject.toml` and `version.txt`: the package and its version, bumped as the lectures ask.
-- `tests/`: your tests; `test_config.py` checks that `project_config.yml` loads.
-- `.github/workflows/ci.yml`: on every pull request and push to `main`, installs the package with
-  uv and runs the pre-commit hooks and the tests.
-- `.github/CODEOWNERS`: who reviews a pull request to `main`, which needs one approving review.
-
-## Getting started
+### Getting started
 
 ```bash
 uv sync --extra dev
 uvx pre-commit install
 databricks bundle validate -t dev
 ```
-
-Each environment logs to its own MLflow experiment and UC trace tables in its matching catalog. You can manage the dev experiment and write dev traces; acc and prd are read-only for you. Each deploy service principal manages its own environment’s experiment and writes to that environment’s schema.

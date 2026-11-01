@@ -11,6 +11,14 @@ artifacts:
     build: uv build
     path: .
 
+variables:
+  usage_policy_id:
+    description: Usage policy for every serverless job (usage_policy_id in project_config.yml)
+    default: 20b687b6-7c89-3e81-9ce3-8177e00936fa
+  schedule_pause_status:
+    description: Whether job schedules run; only prd unpauses them
+    default: PAUSED
+
 include:
   - resources/*.yml
 
@@ -39,3 +47,5 @@ targets:
     workspace:
       host: https://dbc-88df4c2c-4033.cloud.databricks.com
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.target}/${bundle.name}
+    variables:
+      schedule_pause_status: UNPAUSED
