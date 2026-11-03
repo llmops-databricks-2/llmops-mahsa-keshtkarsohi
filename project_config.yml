@@ -1,5 +1,7 @@
 # Project configuration for the LLMOps course, filled in for you at onboarding.
 # Resources are provisioned at onboarding except the volume, which you create during the course.
+# embedding_endpoint is the serving endpoint for ai_query, AI Search and DatabricksServingEndpoint;
+# embedding_service is the AI Gateway model service for the OpenAI client (README.md).
 
 # Your usage policy: set it on every serverless job, endpoint and app you create.
 usage_policy_id: "20b687b6-7c89-3e81-9ce3-8177e00936fa"
@@ -13,9 +15,10 @@ dev:
   schema: "mahsa_keshtkarsohi"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
-  warehouse_id: "be8f0e8cc38ba3f4"
-  experiment_path: "/llmops/mahsa_keshtkarsohi-dev"
+  embedding_endpoint: "databricks-gte-large-en"
+  embedding_service: "course_ops.gateway.embed"
+  warehouse_id: "21241eb62f862b79"
+  experiment_path: "/llmops/mahsa-keshtkarsohi-dev"
   # Your provisioned Lakebase project.
   lakebase_instance: "lb-llmops-mahsa-keshtkarsohi"
 
@@ -25,9 +28,10 @@ acc:
   schema: "mahsa_keshtkarsohi"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
-  warehouse_id: "be8f0e8cc38ba3f4"
-  experiment_path: "/llmops/mahsa_keshtkarsohi-acc"
+  embedding_endpoint: "databricks-gte-large-en"
+  embedding_service: "course_ops.gateway.embed"
+  warehouse_id: "21241eb62f862b79"
+  experiment_path: "/llmops/mahsa-keshtkarsohi-acc"
   # Your provisioned Lakebase project for this environment.
   lakebase_instance: "lb-llmops-mahsa-keshtkarsohi"
 
@@ -37,8 +41,9 @@ prd:
   schema: "mahsa_keshtkarsohi"
   volume: "arxiv_files"
   llm_endpoint: "course_ops.gateway.chat"
-  embedding_endpoint: "course_ops.gateway.embed"
-  warehouse_id: "be8f0e8cc38ba3f4"
-  experiment_path: "/llmops/mahsa_keshtkarsohi-prd"
+  embedding_endpoint: "databricks-gte-large-en"
+  embedding_service: "course_ops.gateway.embed"
+  warehouse_id: "21241eb62f862b79"
+  experiment_path: "/llmops/mahsa-keshtkarsohi-prd"
   # Your provisioned Lakebase project for this environment.
   lakebase_instance: "lb-llmops-mahsa-keshtkarsohi"
